@@ -21,9 +21,22 @@ export async function apiClient<T>(
 
   if (!contentType?.includes("application/json")) {
     const text = await response.text();
-    throw new Error(
-      `Expected JSON response. Response: ${text.slice(0, 100)}`,
-    );
+    console.error('Non-JSON API response:', {
+      endpoint,
+      status: response.status,
+      contentType,
+      response: text.slice(0, 500),
+    });
+
+    if (response.status === 413) {
+      throw new Error('File is too large. Please upload a smaller file.');
+    }
+
+    if (response.status >= 500) {
+      throw new Error('Server error occurred. Please try again.');
+    }
+
+    throw new Error('Unexpected server response. Please try again.');
   }
 
   const data = await response.json();

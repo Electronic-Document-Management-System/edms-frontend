@@ -71,7 +71,7 @@ export async function uploadDocument(input: UploadDocumentInput) {
   formData.append("folder_id", String(input.folder_id));
   formData.append("file", input.file);
 
-  const response = await apiClient<DocumentResponse>("/document/upload", {
+  const response = await apiClient<DocumentResponse>("/document", {
     method: "POST",
     body: formData,
   });
