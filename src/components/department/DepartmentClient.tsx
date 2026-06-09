@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ConfirmActionDialog } from "../common/ConfirmActionDialog";
+import { toast } from "sonner";
 
 export function DepartmentsClient() {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -73,10 +74,7 @@ export function DepartmentsClient() {
       setError("");
 
       if (editingId) {
-        const updatedDepartment = await updateDepartment(editingId, {
-          name,
-          parent_id: null,
-        });
+        const updatedDepartment = await updateDepartment(editingId, { name });
 
         setDepartments((prev) =>
           prev.map((department) =>
@@ -85,22 +83,21 @@ export function DepartmentsClient() {
         );
 
         resetForm();
-        setError("");
+        toast.success("Department updated successfully.");
         return;
       }
 
-      const newDepartment = await createDepartment({
-        name,
-        parent_id: null,
-      });
+      const newDepartment = await createDepartment({ name });
 
       setDepartments((prev) => [newDepartment, ...prev]);
       resetForm();
-      setError("");
+      toast.success("Department created successfully.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Department action failed.";
+
       setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -127,32 +124,26 @@ export function DepartmentsClient() {
 
       setDeleteDialogOpen(false);
       setSelectedDepartmentId(null);
+
+      toast.success("Department deleted successfully.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to delete department.";
 
+      setDeleteDialogOpen(false);
+      setSelectedDepartmentId(null);
+
       setError(message);
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleDelete = async (departmentId: number) => {
-    try {
-      setError("");
-
-      await deleteDepartment(departmentId);
-
-      setDepartments((prev) =>
-        prev.filter((department) => department.id !== departmentId),
-      );
-
-      setError("");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete department.";
-      setError(message);
-    }
+  const openDeleteDialog = (departmentId: number) => {
+    setError("");
+    setSelectedDepartmentId(departmentId);
+    setDeleteDialogOpen(true);
   };
 
   return (
@@ -254,9 +245,7 @@ export function DepartmentsClient() {
                           size="icon"
                           variant="destructive"
                           onClick={() => {
-                            setError("");
-                            setSelectedDepartmentId(department.id);
-                            setDeleteDialogOpen(true);
+                            openDeleteDialog(department.id);
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -285,8 +274,11 @@ export function DepartmentsClient() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         isLoading={isDeleting}
+        variant="destructive"
         title="Delete department?"
-        description="This department will be deleted only if it has no assigned users, folders, or documents. This action may affect organizational structure."
+        description="This department can only be deleted if it has no assigned users, folders, or documents."
+        confirmText="Delete"
+        loadingText="Deleting..."
         onConfirm={handleConfirmDelete}
       />
     </div>
