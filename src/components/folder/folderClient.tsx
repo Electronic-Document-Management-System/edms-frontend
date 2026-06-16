@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FolderInput, Pencil, Plus, Trash2 } from "lucide-react";
+import { Folder as FolderIcon, FolderInput, Home, Pencil, Plus, Trash2 } from "lucide-react";
 
 import {
   createFolder,
@@ -27,6 +27,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
   Select,
   SelectContent,
@@ -69,6 +77,11 @@ export function FolderClient() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
 
+  const [activeDepartmentId, setActiveDepartmentId] = useState("all");
+  const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+  const [breadcrumbs, setBreadcrumbs] = useState<Folder[]>([]);
+  const [visibleFolders, setVisibleFolders] = useState<Folder[]>([]);
+
   const departmentMap = useMemo(() => {
     return new Map(
       departments.map((department) => [department.id, department.name]),
@@ -91,6 +104,7 @@ export function FolderClient() {
 
       setFolders(foldersData);
       setDepartments(departmentsData);
+      setVisibleFolders(foldersData);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to load folders.";
@@ -103,6 +117,113 @@ export function FolderClient() {
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  const loadRootFolders = async (departmentIdValue = activeDepartmentId) => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      setCurrentFolderId(null);
+      setBreadcrumbs([]);
+
+      if (departmentIdValue === "all") {
+        setVisibleFolders(folders);
+        setParentId("none");
+        return;
+      }
+
+      const rootFolders = await getFolders({
+        departmentId: Number(departmentIdValue),
+        parentId: null,
+      });
+
+      setVisibleFolders(rootFolders);
+      setDeptId(departmentIdValue);
+      setParentId("none");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load root folders.";
+
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadFolderChildren = async (
+    folder: Folder,
+    nextBreadcrumbs: Folder[],
+  ) => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const childFolders = await getFolders({
+        departmentId: folder.dept_id,
+        parentId: folder.id,
+      });
+
+      setActiveDepartmentId(String(folder.dept_id));
+      setCurrentFolderId(folder.id);
+      setBreadcrumbs(nextBreadcrumbs);
+      setVisibleFolders(childFolders);
+
+      if (!editingId) {
+        setDeptId(String(folder.dept_id));
+        setParentId(String(folder.id));
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to open folder.";
+
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFolderOpen = async (folder: Folder) => {
+    await loadFolderChildren(folder, [...breadcrumbs, folder]);
+  };
+
+  const handleBreadcrumbClick = async (folder: Folder, index: number) => {
+    await loadFolderChildren(folder, breadcrumbs.slice(0, index + 1));
+  };
+
+  const handleRootClick = async () => {
+    await loadRootFolders(activeDepartmentId);
+  };
+
+  const handleActiveDepartmentChange = async (value: string) => {
+    setActiveDepartmentId(value);
+    setCurrentFolderId(null);
+    setBreadcrumbs([]);
+
+    if (!editingId && value !== "all") {
+      setDeptId(value);
+    }
+
+    if (!editingId) {
+      setParentId("none");
+    }
+
+    await loadRootFolders(value);
+  };
+
+  const refreshCurrentExplorerView = async () => {
+    if (currentFolderId) {
+      const currentFolder = folders.find((folder) => folder.id === currentFolderId);
+
+      if (currentFolder) {
+        await loadFolderChildren(currentFolder, breadcrumbs);
+        return;
+      }
+    }
+
+    await loadRootFolders(activeDepartmentId);
+  };
 
   useEffect(() => {
     if (!error) return;
@@ -123,6 +244,11 @@ export function FolderClient() {
     setError("");
   };
 
+  const currentDepartmentName =
+    activeDepartmentId === "all"
+      ? "All departments"
+      : departmentMap.get(Number(activeDepartmentId)) ?? "Selected department";
+
   const handleSubmit = async () => {
     if (!name.trim()) {
       toast.error("Folder name is required.");
@@ -138,11 +264,17 @@ export function FolderClient() {
       setIsSubmitting(true);
       setError("");
 
+      const finalParentId = parentId === "none"
+        ? currentFolderId && !editingId
+          ? currentFolderId
+          : null
+        : Number(parentId);
+
       const payload = {
         name,
         description,
         dept_id: Number(deptId),
-        parent_id: parentId === "none" ? null : Number(parentId),
+        parent_id: finalParentId,
       };
 
       if (editingId) {
@@ -162,7 +294,20 @@ export function FolderClient() {
       const newFolder = await createFolder(payload);
 
       setFolders((prev) => [newFolder, ...prev]);
+
+      if (
+        newFolder.parent_id === currentFolderId ||
+        (!currentFolderId && !newFolder.parent_id)
+      ) {
+        setVisibleFolders((prev) => [newFolder, ...prev]);
+      }
+
       resetForm();
+
+      if (currentFolderId) {
+        setParentId(String(currentFolderId));
+      }
+
       toast.success("Folder created successfully.");
 
     } catch (error) {
@@ -202,6 +347,10 @@ export function FolderClient() {
         prev.filter((folder) => folder.id !== selectedFolderId),
       );
 
+      setVisibleFolders((prev) =>
+        prev.filter((folder) => folder.id !== selectedFolderId),
+      );
+
       setDeleteDialogOpen(false);
       setSelectedFolderId(null);
 
@@ -238,8 +387,39 @@ export function FolderClient() {
 
     if (folder.id === selectedMoveFolder.id) return false;
 
+    if (folder.id !== selectedMoveFolder.parent_id) return false;
+
     return folder.dept_id === selectedMoveFolder.dept_id;
   });
+
+  const isDescendantFolder = (
+    possibleChildId: number,
+    possibleParentId: number,
+  ) => {
+    let currentFolder = folders.find(
+      (folder) => folder.id === possibleChildId,
+    );
+
+    const visited = new Set<number>();
+
+    while (currentFolder?.parent_id) {
+      if (visited.has(currentFolder.id)) {
+        return true;
+      }
+
+      visited.add(currentFolder.id);
+
+      if (currentFolder.parent_id === possibleParentId) {
+        return true;
+      }
+
+      currentFolder = folders.find(
+        (folder) => folder.id === currentFolder?.parent_id,
+      );
+    }
+
+    return false;
+  };
 
   const handleConfirmMove = async () => {
     if (!selectedMoveFolder) return;
@@ -251,8 +431,8 @@ export function FolderClient() {
       const newParentId =
         moveParentId === "none" ? null : Number(moveParentId);
 
-      if (newParentId === selectedMoveFolder.id) {
-        toast.error("A folder cannot be moved inside itself.");
+      if (newParentId && isDescendantFolder(newParentId, selectedMoveFolder.id)) {
+        toast.error("A folder cannot be moved inside its own child folder.");
         return;
       }
 
@@ -271,6 +451,8 @@ export function FolderClient() {
       setMoveParentId("none");
 
       toast.success("Folder moved successfully.");
+      await refreshCurrentExplorerView();
+
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to move folder.";
@@ -378,53 +560,150 @@ export function FolderClient() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading folders...</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Folder</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Parent Folder</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-[120px] text-right">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="rounded-lg border bg-slate-50 px-4 py-3">
+                    <Breadcrumb>
+                      <BreadcrumbList>
+                        <BreadcrumbItem>
+                          {breadcrumbs.length === 0 ? (
+                            <BreadcrumbPage className="inline-flex items-center gap-2">
+                              <Home className="h-4 w-4" />
+                              {currentDepartmentName}
+                            </BreadcrumbPage>
+                          ) : (
+                            <BreadcrumbLink asChild>
+                              <button
+                                type="button"
+                                onClick={handleRootClick}
+                                className="inline-flex items-center gap-2"
+                              >
+                                <Home className="h-4 w-4" />
+                                {currentDepartmentName}
+                              </button>
+                            </BreadcrumbLink>
+                          )}
+                        </BreadcrumbItem>
 
-              <TableBody>
-                {folders.map((folder) => (
-                  <TableRow key={folder.id}>
-                    <TableCell>{folder.id}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 font-medium">
-                        <span className="text-xl leading-none">📁</span>
-                        <span>{folder.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {departmentMap.get(folder.dept_id) ??
-                        `Department #${folder.dept_id}`}
-                    </TableCell>
-                    <TableCell>
-                      {folder.parent_id ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg leading-none">📁</span>
-                          <span>
-                            {folderMap.get(folder.parent_id) ?? `Folder #${folder.parent_id}`}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Root Folder</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {folder.description ?? "-"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-2">
+                        {breadcrumbs.map((folder, index) => {
+                          const isLast = index === breadcrumbs.length - 1;
+
+                          return (
+                            <div key={`${folder.id}-${index}`} className="contents">
+                              <BreadcrumbSeparator />
+
+                              <BreadcrumbItem>
+                                {isLast ? (
+                                  <BreadcrumbPage className="inline-flex items-center gap-2">
+                                    <FolderIcon className="h-4 w-4 text-amber-500" />
+                                    {folder.name}
+                                  </BreadcrumbPage>
+                                ) : (
+                                  <BreadcrumbLink asChild>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleBreadcrumbClick(folder, index)
+                                      }
+                                      className="inline-flex items-center gap-2"
+                                    >
+                                      <FolderIcon className="h-4 w-4 text-amber-500" />
+                                      {folder.name}
+                                    </button>
+                                  </BreadcrumbLink>
+                                )}
+                              </BreadcrumbItem>
+                            </div>
+                          );
+                        })}
+                      </BreadcrumbList>
+                    </Breadcrumb>
+                  </div>
+
+                  <Select
+                    value={activeDepartmentId}
+                    onValueChange={handleActiveDepartmentChange}
+                  >
+                    <SelectTrigger className="w-full md:w-[260px]">
+                      <SelectValue placeholder="Filter by department" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="all">All departments</SelectItem>
+
+                      {departments.map((department) => (
+                        <SelectItem key={department.id} value={String(department.id)}>
+                          {department.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  Click a folder to view and manage its child folders.
+                </p>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Folder</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Parent Folder</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="w-[120px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {visibleFolders.map((folder) => (
+                    <TableRow key={folder.id}>
+                      <TableCell>{folder.id}</TableCell>
+
+                      <TableCell>
+                        <button
+                          type="button"
+                          onClick={() => handleFolderOpen(folder)}
+                          className="group flex items-center gap-2 rounded-md px-2 py-1 font-medium transition hover:bg-amber-50 hover:text-amber-700"
+                        >
+                          <FolderIcon className="h-5 w-5 text-amber-500" />
+                          <span className="group-hover:underline">{folder.name}</span>
+                        </button>
+                      </TableCell>
+
+                      <TableCell>
+                        {departmentMap.get(folder.dept_id) ??
+                          `Department #${folder.dept_id}`}
+                      </TableCell>
+
+                      <TableCell>
+                        {folder.parent_id ? (
+                          <div className="flex items-center gap-2">
+                            <FolderIcon className="h-4 w-4 text-amber-500" />
+                            <span>
+                              {folderMap.get(folder.parent_id) ??
+                                `Folder #${folder.parent_id}`}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Root Folder</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-muted-foreground">
+                        {folder.description ?? "-"}
+                      </TableCell>
+
+                      <TableCell>
                         <div className="flex justify-end gap-2">
-                          <ActionTooltip label="Edit folder" tooltipClassName="bg-slate-900 text-white" arrowClassName="fill-slate-900">
+                          <ActionTooltip
+                            label="Edit folder"
+                            tooltipClassName="bg-slate-900 text-white"
+                            arrowClassName="fill-slate-900"
+                          >
                             <Button
                               size="icon"
                               variant="outline"
@@ -434,7 +713,8 @@ export function FolderClient() {
                             </Button>
                           </ActionTooltip>
 
-                          <ActionTooltip label="Move folder" 
+                          <ActionTooltip
+                            label="Move folder"
                             tooltipClassName="bg-blue-600 text-white"
                             arrowClassName="fill-blue-600"
                           >
@@ -447,7 +727,11 @@ export function FolderClient() {
                             </Button>
                           </ActionTooltip>
 
-                          <ActionTooltip label="Delete folder" tooltipClassName="bg-red-600 text-white" arrowClassName="fill-red-600">
+                          <ActionTooltip
+                            label="Delete folder"
+                            tooltipClassName="bg-red-600 text-white"
+                            arrowClassName="fill-red-600"
+                          >
                             <Button
                               size="icon"
                               variant="destructive"
@@ -457,23 +741,23 @@ export function FolderClient() {
                             </Button>
                           </ActionTooltip>
                         </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
 
-                {folders.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="py-8 text-center text-muted-foreground"
-                    >
-                      No folders found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  {visibleFolders.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        No folders found in this location.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
