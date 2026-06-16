@@ -6,12 +6,36 @@ import {
     UpdateFolderInput,
 } from "./folder.types";
 
-export async function getFolders() {
-    const response = await apiClient<FoldersResponse>("/folders", {
-        method: "GET",
-    });
+type GetFoldersParams = {
+  departmentId?: number;
+  parentId?: number | null;
+};
 
-    return response.data.folders;
+export async function getFolders(params: GetFoldersParams = {}) {
+  const searchParams = new URLSearchParams();
+
+  if (params.departmentId) {
+    searchParams.set("departmentId", String(params.departmentId));
+  }
+
+  if (params.parentId === null) {
+    searchParams.set("parentId", "null");
+  }
+
+  if (typeof params.parentId === "number") {
+    searchParams.set("parentId", String(params.parentId));
+  }
+
+  const queryString = searchParams.toString();
+
+  const response = await apiClient<FoldersResponse>(
+    `/folders${queryString ? `?${queryString}` : ""}`,
+    {
+      method: "GET",
+    },
+  );
+
+  return response.data.folders;
 }
 
 export async function getFoldersByDepartment(departmentId: number) {

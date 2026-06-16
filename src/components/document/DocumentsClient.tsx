@@ -5,12 +5,22 @@ import Link from "next/link";
 import {
   Archive,
   Eye,
-  FileText,
+  Folder as FolderIcon,
+  Home,
   Search,
   Trash2,
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 import { getDepartments } from "@/features/department/department.api";
 import { Department } from "@/features/department/department.types";
@@ -67,6 +77,10 @@ export function DocumentsClient() {
     null,
   );
 
+  const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+  const [breadcrumbs, setBreadcrumbs] = useState<Folder[]>([]);
+  const [visibleFolders, setVisibleFolders] = useState<Folder[]>([]);
+
   const departmentMap = useMemo(() => {
     return new Map(
       departments.map((department) => [department.id, department.name]),
@@ -83,29 +97,8 @@ export function DocumentsClient() {
     return folders.filter((folder) => folder.dept_id === Number(departmentId));
   }, [folders, departmentId]);
 
-  const fetchDocuments = async () => {
-    try {
-      setIsLoading(true);
-
-      const data = await getDocuments({
-        search: search.trim() || undefined,
-        departmentId:
-          departmentId === "all" ? undefined : Number(departmentId),
-        folderId: folderId === "all" ? undefined : Number(folderId),
-        status: status === "all" ? undefined : status,
-        page: 1,
-        limit: 20,
-      });
-
-      setDocuments(data.filter((document) => !document.isDeleted));
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to load documents.";
-
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
+  const getActiveDocuments = (data: DocumentItem[]) => {
+    return data.filter((document) => !document.isDeleted);
   };
 
   const fetchInitialData = async () => {
@@ -123,7 +116,8 @@ export function DocumentsClient() {
 
       setDepartments(departmentsData);
       setFolders(foldersData);
-      setDocuments(documentsData.filter((document) => !document.isDeleted));
+      setVisibleFolders([]);
+      setDocuments(getActiveDocuments(documentsData));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to load documents.";
@@ -140,7 +134,155 @@ export function DocumentsClient() {
 
   useEffect(() => {
     setFolderId("all");
+    setCurrentFolderId(null);
+    setBreadcrumbs([]);
+    setVisibleFolders([]);
   }, [departmentId]);
+
+  const fetchDocuments = async () => {
+    try {
+      setIsLoading(true);
+
+      setCurrentFolderId(null);
+      setBreadcrumbs([]);
+
+      if (folderId !== "all") {
+        const selectedFolder = folders.find(
+          (folder) => folder.id === Number(folderId),
+        );
+
+        if (selectedFolder) {
+          await loadFolderView(selectedFolder, [selectedFolder]);
+          return;
+        }
+      }
+
+      const selectedDepartmentId =
+        departmentId === "all" ? undefined : Number(departmentId);
+
+      const [rootFolders, documentsData] = await Promise.all([
+        selectedDepartmentId
+          ? getFolders({
+            departmentId: selectedDepartmentId,
+            parentId: null,
+          })
+          : Promise.resolve([]),
+        getDocuments({
+          search: search.trim() || undefined,
+          departmentId: selectedDepartmentId,
+          status: status === "all" ? undefined : status,
+          page: 1,
+          limit: 20,
+        }),
+      ]);
+
+      setVisibleFolders(rootFolders);
+      setDocuments(getActiveDocuments(documentsData));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load documents.";
+
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadFolderView = async (
+    folder: Folder,
+    nextBreadcrumbs: Folder[],
+  ) => {
+    try {
+      setIsLoading(true);
+
+      const [childFolders, folderDocuments] = await Promise.all([
+        getFolders({
+          departmentId: folder.dept_id,
+          parentId: folder.id,
+        }),
+        getDocuments({
+          search: search.trim() || undefined,
+          departmentId: folder.dept_id,
+          folderId: folder.id,
+          status: status === "all" ? undefined : status,
+          page: 1,
+          limit: 20,
+        }),
+      ]);
+
+      setDepartmentId(String(folder.dept_id));
+      setFolderId(String(folder.id));
+      setCurrentFolderId(folder.id);
+      setBreadcrumbs(nextBreadcrumbs);
+      setVisibleFolders(childFolders);
+      setDocuments(getActiveDocuments(folderDocuments));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to open folder.";
+
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFolderOpen = async (folder: Folder) => {
+    await loadFolderView(folder, [...breadcrumbs, folder]);
+  };
+
+  const handleDocumentFolderOpen = async (folderId: number) => {
+    const folder = folders.find((item) => item.id === folderId);
+
+    if (!folder) {
+      toast.error("Folder not found.");
+      return;
+    }
+
+    await loadFolderView(folder, [folder]);
+  };
+
+  const handleRootClick = async () => {
+    try {
+      setIsLoading(true);
+
+      setCurrentFolderId(null);
+      setBreadcrumbs([]);
+      setFolderId("all");
+
+      const selectedDepartmentId =
+        departmentId === "all" ? undefined : Number(departmentId);
+
+      const [rootFolders, documentsData] = await Promise.all([
+        selectedDepartmentId
+          ? getFolders({
+            departmentId: selectedDepartmentId,
+            parentId: null,
+          })
+          : Promise.resolve([]),
+        getDocuments({
+          search: search.trim() || undefined,
+          departmentId: selectedDepartmentId,
+          status: status === "all" ? undefined : status,
+          page: 1,
+          limit: 20,
+        }),
+      ]);
+
+      setVisibleFolders(rootFolders);
+      setDocuments(getActiveDocuments(documentsData));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to open repository.";
+
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBreadcrumbClick = async (folder: Folder, index: number) => {
+    await loadFolderView(folder, breadcrumbs.slice(0, index + 1));
+  };
 
   const openArchiveDialog = (documentId: number) => {
     setSelectedDocumentId(documentId);
@@ -220,6 +362,11 @@ export function DocumentsClient() {
     return "📄";
   };
 
+  const currentDepartmentName =
+    departmentId === "all"
+      ? "All departments"
+      : departmentMap.get(Number(departmentId)) ?? "Selected department";
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -281,10 +428,7 @@ export function DocumentsClient() {
 
                 {filteredFolders.map((folder) => (
                   <SelectItem key={folder.id} value={String(folder.id)}>
-                    <span className="flex items-center gap-2">
-                      <span>📁</span>
-                      {folder.name}
-                    </span>
+                    📁 {folder.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -299,7 +443,6 @@ export function DocumentsClient() {
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
                 <SelectItem value="ARCHIVED">Archived</SelectItem>
-
               </SelectContent>
             </Select>
           </div>
@@ -317,7 +460,93 @@ export function DocumentsClient() {
           <CardTitle>Document Repository</CardTitle>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-6">
+          <div className="rounded-lg border bg-slate-50 px-4 py-3">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  {breadcrumbs.length === 0 ? (
+                    <BreadcrumbPage className="inline-flex items-center gap-2">
+                      <Home className="h-4 w-4" />
+                      {currentDepartmentName}
+                    </BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink asChild>
+                      <button
+                        type="button"
+                        onClick={handleRootClick}
+                        className="inline-flex items-center gap-2"
+                      >
+                        <Home className="h-4 w-4" />
+                        {currentDepartmentName}
+                      </button>
+                    </BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+
+                {breadcrumbs.map((folder, index) => {
+                  const isLast = index === breadcrumbs.length - 1;
+
+                  return (
+                    <div key={folder.id} className="contents">
+                      <BreadcrumbSeparator />
+
+                      <BreadcrumbItem>
+                        {isLast ? (
+                          <BreadcrumbPage className="inline-flex items-center gap-2">
+                            <FolderIcon className="h-4 w-4 text-amber-500" />
+                            {folder.name}
+                          </BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink asChild>
+                            <button
+                              type="button"
+                              onClick={() => handleBreadcrumbClick(folder, index)}
+                              className="inline-flex items-center gap-2"
+                            >
+                              <FolderIcon className="h-4 w-4 text-amber-500" />
+                              {folder.name}
+                            </button>
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                    </div>
+                  );
+                })}
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+
+          {visibleFolders.length > 0 && (
+            <div>
+              <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
+                Folders
+              </h3>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {visibleFolders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    type="button"
+                    onClick={() => handleFolderOpen(folder)}
+                    className="flex items-center gap-3 rounded-xl border bg-white p-4 text-left transition hover:border-amber-300 hover:bg-amber-50"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
+                      <FolderIcon className="h-5 w-5 text-amber-600" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{folder.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {folder.description || "Folder"}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <p className="text-sm text-muted-foreground">
               Loading documents...
@@ -367,11 +596,17 @@ export function DocumentsClient() {
                     </TableCell>
 
                     <TableCell>
-                      <span className="inline-flex items-center gap-2">
-                        <span>📁</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDocumentFolderOpen(document.folder_id)
+                        }
+                        className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-amber-50 hover:text-amber-700"
+                      >
+                        <FolderIcon className="h-4 w-4 text-amber-500" />
                         {folderMap.get(document.folder_id) ??
                           `Folder #${document.folder_id}`}
-                      </span>
+                      </button>
                     </TableCell>
 
                     <TableCell>
@@ -395,7 +630,12 @@ export function DocumentsClient() {
                           tooltipClassName="bg-slate-900 text-white"
                           arrowClassName="fill-slate-900"
                         >
-                          <Button size="icon" variant="outline" className="cursor-pointer" asChild>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="cursor-pointer"
+                            asChild
+                          >
                             <Link href={`/documents/${document.id}`}>
                               <Eye className="h-4 w-4" />
                             </Link>
@@ -438,13 +678,24 @@ export function DocumentsClient() {
                   </TableRow>
                 ))}
 
-                {documents.length === 0 && (
+                {documents.length === 0 && visibleFolders.length === 0 && (
                   <TableRow>
                     <TableCell
                       colSpan={7}
                       className="py-10 text-center text-muted-foreground"
                     >
                       No documents found.
+                    </TableCell>
+                  </TableRow>
+                )}
+
+                {documents.length === 0 && visibleFolders.length > 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="py-10 text-center text-muted-foreground"
+                    >
+                      No documents in this folder.
                     </TableCell>
                   </TableRow>
                 )}
