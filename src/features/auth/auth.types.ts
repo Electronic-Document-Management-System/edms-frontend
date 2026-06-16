@@ -24,6 +24,7 @@ export type AuthUser = {
   createdAt: string;
   updatedAt: string;
   roles: AuthRole[];
+  permissions: string[];
 };
 
 export type LoginResponse = {
