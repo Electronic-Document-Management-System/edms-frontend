@@ -4,6 +4,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 type ApiClientOptions = RequestInit;
 
+let isRefreshing = false;
+
 export async function apiClient<T>(
   endpoint: string,
   options: ApiClientOptions = {},
@@ -45,6 +47,27 @@ export async function apiClient<T>(
 
   if (!response.ok) {
     if (response.status === 401) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+
+        try {
+          const refreshRes = await fetch(`${API_BASE_URL}/auth/token-refresh`, {
+            method: "POST",
+            credentials: "include",
+
+          })
+          isRefreshing = false;
+
+          if (refreshRes.ok) {
+            return apiClient<T>(endpoint, options)
+          };
+
+        } catch (error) {
+          isRefreshing = false;
+        }
+
+      };
+
       useAuthStore.persist.clearStorage();
       useAuthStore.setState({ user: null, isAuthenticated: false });
       window.location.href = "/login";
