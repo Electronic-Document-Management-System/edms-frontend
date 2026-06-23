@@ -31,6 +31,10 @@ import { ActionTooltip } from "@/components/common/ActionTooltip";
 import { ConfirmActionDialog } from "@/components/common/ConfirmActionDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DocumentMetadataCard } from "../metadata/DocumentMetadataCard";
+import { DocumentWorkflowCard } from "../workflow/DocumentWorkflowCard";
+import { PERMISSIONS } from "@/constants/permissions";
+import { usePermission } from "@/hooks/usePermission";
 
 type DocumentDetailClientProps = {
   documentId: number;
@@ -49,6 +53,21 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
 
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { can } = usePermission();
+
+  const canDownload = can(PERMISSIONS.DOCUMENT_DOWNLOAD_ALL) ||
+    can(PERMISSIONS.DOCUMENT_DOWNLOAD_ASSIGNED) ||
+    can(PERMISSIONS.DOCUMENT_DOWNLOAD_SHARED) ||
+    can(PERMISSIONS.DOCUMENT_DOWNLOAD_DEPARTMENT) ||
+    can(PERMISSIONS.DOCUMENT_DOWNLOAD_OWN);
+
+  const canArchive = can(PERMISSIONS.DOCUMENT_ARCHIVE_OWN) ||
+    can(PERMISSIONS.DOCUMENT_ARCHIVE_DEPARTMENT) ||
+    can(PERMISSIONS.DOCUMENT_ARCHIVE_ALL);
+
+  const canDelete = can(PERMISSIONS.DOCUMENT_DELETE_OWN) ||
+    can(PERMISSIONS.DOCUMENT_DELETE_DEPARTMENT) ||
+    can(PERMISSIONS.DOCUMENT_DELETE_ALL);
 
   const departmentMap = useMemo(() => {
     return new Map(
@@ -70,11 +89,7 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
     try {
       setIsLoading(true);
 
-      const [documentData, departmentsData, foldersData] = await Promise.all([
-        getDocumentById(documentId),
-        getDepartments(),
-        getFolders(),
-      ]);
+      const documentData = await getDocumentById(documentId);
 
       if (documentData.isDeleted) {
         toast.error("This document has been removed.");
@@ -83,13 +98,24 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
       }
 
       setDocument(documentData);
-      setDepartments(departmentsData);
-      setFolders(foldersData);
+
+      const [departmentsResult, foldersResult] = await Promise.allSettled([
+        getDepartments(),
+        getFolders(),
+      ]);
+
+      if (departmentsResult.status === "fulfilled") {
+        setDepartments(departmentsResult.value);
+      }
+
+      if (foldersResult.status === "fulfilled") {
+        setFolders(foldersResult.value);
+      }
+
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to load document details.";
+      const message = error instanceof Error
+        ? error.message
+        : "Failed to load document details.";
 
       toast.error(message);
       router.push("/documents");
@@ -211,45 +237,49 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
         </div>
 
         <div className="flex gap-2">
-          <ActionTooltip
-            label="Download document"
-            tooltipClassName="bg-slate-900 text-white"
-            arrowClassName="fill-slate-900"
-          >
-            <Button variant="outline" onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
-          </ActionTooltip>
-
-          <ActionTooltip
-            label="Archive document"
-            tooltipClassName="bg-blue-600 text-white"
-            arrowClassName="fill-blue-600"
-          >
-            <Button
-              variant="outline"
-              disabled={document.status !== "ACTIVE"}
-              onClick={() => setArchiveDialogOpen(true)}
+          {canDownload && (
+            <ActionTooltip
+              label="Download document"
+              tooltipClassName="bg-slate-900 text-white"
+              arrowClassName="fill-slate-900"
             >
-              <Archive className="mr-2 h-4 w-4" />
-              Archive
-            </Button>
-          </ActionTooltip>
+              <Button variant="outline" onClick={handleDownload}>
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+            </ActionTooltip>
+          )}
 
-          <ActionTooltip
-            label="Remove document"
-            tooltipClassName="bg-red-600 text-white"
-            arrowClassName="fill-red-600"
-          >
-            <Button
-              variant="destructive"
-              onClick={() => setDeleteDialogOpen(true)}
+          {canArchive && (
+            <ActionTooltip
+              label="Archive document"
+              tooltipClassName="bg-blue-600 text-white"
+              arrowClassName="fill-blue-600"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Remove
-            </Button>
-          </ActionTooltip>
+              <Button
+                variant="outline"
+                disabled={document.status !== "ACTIVE"}
+                onClick={() => setArchiveDialogOpen(true)}
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archive
+              </Button>
+            </ActionTooltip>)}
+          {canDelete && (
+            <ActionTooltip
+              label="Remove document"
+              tooltipClassName="bg-red-600 text-white"
+              arrowClassName="fill-red-600"
+            >
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Remove
+              </Button>
+            </ActionTooltip>
+          )}
         </div>
       </div>
 
@@ -332,7 +362,10 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
             <InfoItem label="Uploaded by user ID" value={document.uploaded_by} />
           </CardContent>
         </Card>
+
       </div>
+      <DocumentMetadataCard documentId={document.id} />
+      <DocumentWorkflowCard documentId={document.id} />
 
       <Card>
         <CardHeader>
@@ -349,10 +382,12 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
               action to open the uploaded file.
             </p>
 
-            <Button className="mt-4" variant="outline" onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" />
-              Download File
-            </Button>
+            {canDownload && (
+              <Button className="mt-4" variant="outline" onClick={handleDownload}>
+                <Download className="mr-2 h-4 w-4" />
+                Download File
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
