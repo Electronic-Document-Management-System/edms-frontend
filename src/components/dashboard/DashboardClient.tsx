@@ -8,6 +8,7 @@ import { DashboardStats } from "@/features/dashboard/dashboard.types";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import UploadButton from "../common/UploadButton";
 
 export function DashboardClient() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -68,9 +69,7 @@ export function DashboardClient() {
           </p>
         </div>
 
-        <Button asChild>
-          <Link href="/documents/upload">Upload Document</Link>
-        </Button>
+        <UploadButton />
       </div>
 
       {error && (

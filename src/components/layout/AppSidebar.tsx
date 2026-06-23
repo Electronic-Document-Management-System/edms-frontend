@@ -20,15 +20,15 @@ import { usePermission } from "@/hooks/usePermission";
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { can } = usePermission(); 
+  const { can, canAny } = usePermission();
 
-  const hasPermission = (permission?: string) =>
-    !permission || can(permission);
+  const hasPermission = (permissions?: string[]) =>
+    !permissions || permissions.length === 0 || canAny(permissions);
 
   const isActive = (url: string) =>
     pathname === url || (url !== "/dashboard" && pathname.startsWith(url));
 
-  const visibleItems = navItems.filter(item => hasPermission(item.permission));
+  const visibleItems = navItems.filter(item => hasPermission(item.permissions));
 
   return (
     <Sidebar collapsible="icon">
@@ -43,10 +43,10 @@ export function AppSidebar() {
 
                 if (item.children) {
                   const visibleChildren = item.children.filter(
-                    child => hasPermission(child.permission)
+                    child => hasPermission(child.permissions)
                   );
 
-                  
+
                   if (visibleChildren.length === 0) return null;
 
                   const isParentActive = pathname.startsWith(item.url);
