@@ -55,11 +55,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
+import UploadButton from "../common/UploadButton";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/constants/permissions";
 export function DocumentsClient() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
+  const { can } = usePermission();
+
+  const canArchive = can(PERMISSIONS.DOCUMENT_ARCHIVE_OWN) ||
+    can(PERMISSIONS.DOCUMENT_ARCHIVE_DEPARTMENT) ||
+    can(PERMISSIONS.DOCUMENT_ARCHIVE_ALL);
+
+  const canDelete = can(PERMISSIONS.DOCUMENT_DELETE_OWN) ||
+    can(PERMISSIONS.DOCUMENT_DELETE_DEPARTMENT) ||
+    can(PERMISSIONS.DOCUMENT_DELETE_ALL);
 
   const [search, setSearch] = useState("");
   const [departmentId, setDepartmentId] = useState("all");
@@ -377,12 +388,7 @@ export function DocumentsClient() {
           </p>
         </div>
 
-        <Button asChild>
-          <Link href="/documents/upload">
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Document
-          </Link>
-        </Button>
+        <UploadButton />
       </div>
 
       <Card>
@@ -642,37 +648,41 @@ export function DocumentsClient() {
                           </Button>
                         </ActionTooltip>
 
-                        <ActionTooltip
-                          label="Archive document"
-                          tooltipClassName="bg-blue-600 text-white"
-                          arrowClassName="fill-blue-600"
-                        >
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="cursor-pointer"
-                            onClick={() => openArchiveDialog(document.id)}
-                            disabled={document.status !== "ACTIVE"}
+                        {canArchive && (
+                          <ActionTooltip
+                            label="Archive document"
+                            tooltipClassName="bg-blue-600 text-white"
+                            arrowClassName="fill-blue-600"
                           >
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                        </ActionTooltip>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="cursor-pointer"
+                              onClick={() => openArchiveDialog(document.id)}
+                              disabled={document.status !== "ACTIVE"}
+                            >
+                              <Archive className="h-4 w-4" />
+                            </Button>
+                          </ActionTooltip>
+                        )}
 
-                        <ActionTooltip
-                          label="Remove document"
-                          tooltipClassName="bg-red-600 text-white"
-                          arrowClassName="fill-red-600"
-                        >
-                          <Button
-                            size="icon"
-                            variant="destructive"
-                            className="cursor-pointer"
-                            onClick={() => openDeleteDialog(document.id)}
-                            disabled={document.status === "DELETED"}
+                        {canDelete && (
+                          <ActionTooltip
+                            label="Remove document"
+                            tooltipClassName="bg-red-600 text-white"
+                            arrowClassName="fill-red-600"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </ActionTooltip>
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              className="cursor-pointer"
+                              onClick={() => openDeleteDialog(document.id)}
+                              disabled={document.status === "DELETED"}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </ActionTooltip>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
