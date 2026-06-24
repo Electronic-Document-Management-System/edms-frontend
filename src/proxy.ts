@@ -1,53 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const publicRoute = ["/login"];
-
-function isTokenExpired(token: string): boolean {
-  try {
-    const payload = JSON.parse(
-      Buffer.from(token.split(".")[1], "base64").toString()
-    );
-    if (!payload.exp) return true;
-    return Date.now() >= payload.exp * 1000;
-  } catch {
-    return true; 
-  }
-}
+const publicRoutes = ["/login"];
 
 export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-    const { pathname } = request.nextUrl;
+  const accessToken = request.cookies.get("accessToken")?.value;
+  const refreshToken = request.cookies.get("refreshToken")?.value;
 
-    const accessToken = request.cookies.get("accessToken")?.value;
+  const isPublicRoute = publicRoutes.includes(pathname);
+  const hasSession = !!accessToken || !!refreshToken;
 
-    const isPublicRoute = publicRoute.includes(pathname);
+  if (pathname === "/") {
+    return NextResponse.redirect(
+      new URL(hasSession ? "/dashboard" : "/login", request.url)
+    );
+  }
 
-    const hasValidToken = accessToken && !isTokenExpired(accessToken)
+  if (!isPublicRoute && !hasSession) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
-    if (!isPublicRoute && !hasValidToken) {
-        const loginUrl = new URL("/login", request.url);
-        return NextResponse.redirect(loginUrl);
-    }
+  if (isPublicRoute && hasSession) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
-    if (hasValidToken && pathname === "/login") {
-        const dashboardUrl = new URL("/dashboard", request.url);
-        return NextResponse.redirect(dashboardUrl);
-    }
-    
-    return NextResponse.next();
+  return NextResponse.next();
 }
 
 export const config = {
-    matcher: [
-        
-        "/dashboard",
-        "/departments",
-        "/folders",
-        "/documents",
-        "/users",
-        "/roles",
-        "/permissions",
-
-        "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-    ],
-}
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
