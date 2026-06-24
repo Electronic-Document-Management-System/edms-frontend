@@ -87,7 +87,7 @@ export const cancelDocumentWorkflow = async (
 };
 
 export const getMyWorkflowSubmissions = async () => {
-    const res = await apiClient<{data: {workflows: DocumentWorkflowDetail[]}}>(
+    const res = await apiClient<{data: {workflows: WorkflowSubmission[]}}>(
         "/workflow/my-submissions"
     )
     return res.data.workflows;
