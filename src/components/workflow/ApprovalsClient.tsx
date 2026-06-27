@@ -28,8 +28,9 @@ export default function ApprovalsClient() {
     try {
       setIsLoading(true);
       const data = await getMyAssignedWorkflows();
-      setAssignments(data);
+      setAssignments(data ?? []);
     } catch (error) {
+      setAssignments([]);
       toast.error(error instanceof Error ? error.message : "Failed to load approvals.");
     } finally {
       setIsLoading(false);

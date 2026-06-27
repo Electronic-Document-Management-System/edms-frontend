@@ -122,5 +122,5 @@ export async function deleteDocument(documentId: number) {
 }
 
 export function getDocumentDownloadUrl(documentId: number) {
-  return `${process.env.NEXT_PUBLIC_API_BASE_URL}/document/${documentId}/download`;
-}
+  return `/api/backend/document/${documentId}/download`;
+};
