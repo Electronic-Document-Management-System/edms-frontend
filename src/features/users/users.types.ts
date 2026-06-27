@@ -26,7 +26,7 @@ export type UserWithRoles = User & {
 export type CreateUserInput = {
   name: string;
   email: string;
-  password: string;
+  password_hash: string;
   dept_id: number;
 };
 

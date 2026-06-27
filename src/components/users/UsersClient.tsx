@@ -60,7 +60,7 @@ export function UsersClient() {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    password: "",
+    password_hash: "",
     dept_id: "",
   });
 
@@ -97,7 +97,7 @@ export function UsersClient() {
 
   const openCreateDialog = () => {
     setEditingUser(null);
-    setForm({ name: "", email: "", password: "", dept_id: "" });
+    setForm({ name: "", email: "", password_hash: "", dept_id: "" });
     setDialogOpen(true);
   };
 
@@ -106,7 +106,7 @@ export function UsersClient() {
     setForm({
       name: user.name,
       email: user.email,
-      password: "",
+      password_hash: "",
       dept_id: String(user.dept_id),
     });
     setDialogOpen(true);
@@ -123,7 +123,7 @@ export function UsersClient() {
       return;
     }
 
-    if (!editingUser && !form.password.trim()) {
+    if (!editingUser && !form.password_hash.trim()) {
       toast.error("Password is required for new users.");
       return;
     }
@@ -143,7 +143,7 @@ export function UsersClient() {
         const created = await createNewUser({
           name: form.name.trim(),
           email: form.email.trim(),
-          password: form.password.trim(),
+          password_hash: form.password_hash.trim(),
           dept_id: Number(form.dept_id),
         });
         setUsers((prev) => [...prev, created]);
@@ -342,8 +342,8 @@ export function UsersClient() {
                   id="password"
                   type="password"
                   placeholder="Set an initial password"
-                  value={form.password}
-                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  value={form.password_hash}
+                  onChange={(e) => setForm((f) => ({ ...f, password_hash: e.target.value }))}
                 />
               </div>
             )}
