@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/table";
 import { ConfirmActionDialog } from "../common/ConfirmActionDialog";
 import { toast } from "sonner";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/constants/permissions";
 
 export function DepartmentsClient() {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -39,6 +41,12 @@ export function DepartmentsClient() {
     null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const { can } = usePermission()
+
+  const canCreateDepartment = can(PERMISSIONS.DEPARTMENT_CREATE_ALL);
+  const canUpdateDepartment = can(PERMISSIONS.DEPARTMENT_UPDATE_ALL);
+  const canDeleteDepartment = can(PERMISSIONS.DEPARTMENT_DELETE_ALL);
 
   const fetchDepartments = async () => {
     try {
@@ -153,7 +161,9 @@ export function DepartmentsClient() {
           Department Management
         </h2>
         <p className="text-muted-foreground">
-          Create and manage organizational departments.
+          {canCreateDepartment || canUpdateDepartment || canDeleteDepartment
+            ? "Create and manage organizational departments."
+            : "All departments are listed below."}
         </p>
       </div>
 
@@ -163,40 +173,42 @@ export function DepartmentsClient() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {editingId ? "Update Department" : "Create Department"}
-          </CardTitle>
-        </CardHeader>
+      {(canCreateDepartment || canUpdateDepartment) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingId ? "Update Department" : "Create Department"}
+            </CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-            <Input
-              placeholder="Department name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+              <Input
+                placeholder="Department name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
 
-            <div className="flex gap-2">
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                <Plus className="mr-2 h-4 w-4" />
-                {isSubmitting
-                  ? "Saving..."
-                  : editingId
-                    ? "Update"
-                    : "Create"}
-              </Button>
-
-              {editingId && (
-                <Button variant="outline" onClick={resetForm}>
-                  Cancel
+              <div className="flex gap-2">
+                <Button onClick={handleSubmit} disabled={isSubmitting}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {isSubmitting
+                    ? "Saving..."
+                    : editingId
+                      ? "Update"
+                      : "Create"}
                 </Button>
-              )}
+
+                {editingId && (
+                  <Button variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -215,9 +227,11 @@ export function DepartmentsClient() {
                   <TableHead>ID</TableHead>
                   <TableHead>Department Name</TableHead>
                   <TableHead>Parent ID</TableHead>
-                  <TableHead className="w-[120px] text-right">
-                    Actions
-                  </TableHead>
+                  {canUpdateDepartment || canDeleteDepartment ? (
+                    <TableHead className="w-30 text-right">
+                      Actions
+                    </TableHead>
+                  ) : null}
                 </TableRow>
               </TableHeader>
 
@@ -233,23 +247,28 @@ export function DepartmentsClient() {
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleEdit(department)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
 
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          onClick={() => {
-                            openDeleteDialog(department.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canUpdateDepartment && (
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => handleEdit(department)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {canDeleteDepartment && (
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            onClick={() => {
+                              openDeleteDialog(department.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

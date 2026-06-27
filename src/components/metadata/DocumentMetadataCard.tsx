@@ -34,6 +34,8 @@ import {
     updateDocumentMetadata,
 } from "@/features/metadata/documentMetadata.api";
 import { DocumentMetadata } from "@/features/metadata/documentMetadata.types";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/constants/permissions";
 
 type DocumentMetadataCardProps = {
     documentId: number;
@@ -55,6 +57,11 @@ export function DocumentMetadataCard({ documentId }: DocumentMetadataCardProps) 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<DocumentMetadata | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const { can } = usePermission();
+    const canCreateMetadata = can(PERMISSIONS.DOCUMENT_METADATA_CREATE_OWN);
+    const canUpdateMetadata = can(PERMISSIONS.DOCUMENT_METADATA_UPDATE_OWN);
+    const canDeleteMetadata = can(PERMISSIONS.DOCUMENT_METADATA_DELETE_ALL);
 
     const fetchData = async () => {
         try {
@@ -251,9 +258,11 @@ export function DocumentMetadataCard({ documentId }: DocumentMetadataCardProps) 
                     tooltipClassName="bg-slate-900 text-white"
                     arrowClassName="fill-slate-900"
                 >
-                    <Button size="icon" variant="outline" onClick={openAddDialog}>
-                        <Plus className="h-4 w-4" />
-                    </Button>
+                    {canCreateMetadata && (
+                        <Button size="icon" variant="outline" onClick={openAddDialog}>
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    )}
                 </ActionTooltip>
             </CardHeader>
 
@@ -288,9 +297,11 @@ export function DocumentMetadataCard({ documentId }: DocumentMetadataCardProps) 
                                         tooltipClassName="bg-slate-900 text-white"
                                         arrowClassName="fill-slate-900"
                                     >
-                                        <Button size="icon" variant="ghost" onClick={() => openEditDialog(item)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
+                                        {canUpdateMetadata && (
+                                            <Button size="icon" variant="ghost" onClick={() => openEditDialog(item)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                     </ActionTooltip>
 
                                     <ActionTooltip
@@ -298,9 +309,11 @@ export function DocumentMetadataCard({ documentId }: DocumentMetadataCardProps) 
                                         tooltipClassName="bg-red-600 text-white"
                                         arrowClassName="fill-red-600"
                                     >
-                                        <Button size="icon" variant="ghost" onClick={() => openDeleteDialog(item)}>
-                                            <Trash2 className="h-4 w-4 text-red-600" />
-                                        </Button>
+                                        {canDeleteMetadata && (
+                                            <Button size="icon" variant="ghost" onClick={() => openDeleteDialog(item)}>
+                                                <Trash2 className="h-4 w-4 text-red-600" />
+                                            </Button>
+                                        )}
                                     </ActionTooltip>
                                 </div>
                             </div>

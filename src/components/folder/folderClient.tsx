@@ -52,6 +52,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ActionTooltip } from "../common/ActionTooltip";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/constants/permissions";
 
 export function FolderClient() {
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -81,6 +83,12 @@ export function FolderClient() {
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Folder[]>([]);
   const [visibleFolders, setVisibleFolders] = useState<Folder[]>([]);
+
+  const { can } = usePermission();
+  const canCreateFolder = can(PERMISSIONS.FOLDER_CREATE_ALL);
+  const canDeleteFolder = can(PERMISSIONS.FOLDER_DELETE_ALL);
+  const canUpdateFolder = can(PERMISSIONS.FOLDER_UPDATE_ALL);
+  const canMoveFolder = can(PERMISSIONS.FOLDER_MOVE_ALL);
 
   const departmentMap = useMemo(() => {
     return new Map(
@@ -475,7 +483,11 @@ export function FolderClient() {
           Folder Management
         </h2>
         <p className="text-muted-foreground">
-          Create and manage department-wise folders.
+          {
+            canCreateFolder || canUpdateFolder || canDeleteFolder
+              ? "Create and manage department-wise folders."
+              : "All folders are listed below."
+          }
         </p>
       </div>
 
@@ -485,71 +497,73 @@ export function FolderClient() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{editingId ? "Update Folder" : "Create Folder"}</CardTitle>
-        </CardHeader>
+      {canCreateFolder && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingId ? "Update Folder" : "Create Folder"}</CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Input
-              placeholder="Folder name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <Input
+                placeholder="Folder name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
 
-            <Input
-              placeholder="Description"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-            />
+              <Input
+                placeholder="Description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
 
-            <Select value={deptId} onValueChange={setDeptId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((department) => (
-                  <SelectItem key={department.id} value={String(department.id)}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={deptId} onValueChange={setDeptId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={String(department.id)}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={parentId} onValueChange={setParentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Parent folder" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No parent folder</SelectItem>
+              <Select value={parentId} onValueChange={setParentId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Parent folder" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No parent folder</SelectItem>
 
-                {availableParentFolders.map((folder) => (
-                  <SelectItem key={folder.id} value={String(folder.id)}>
-                    <span className="flex items-center gap-2">
-                      <span className="text-base leading-none">📁</span>
-                      {folder.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                  {availableParentFolders.map((folder) => (
+                    <SelectItem key={folder.id} value={String(folder.id)}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-base leading-none">📁</span>
+                        {folder.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="mt-4 flex justify-end gap-2">
-            {editingId && (
-              <Button variant="outline" onClick={resetForm}>
-                Cancel
+            <div className="mt-4 flex justify-end gap-2">
+              {editingId && (
+                <Button variant="outline" onClick={resetForm}>
+                  Cancel
+                </Button>
+              )}
+
+              <Button onClick={handleSubmit} disabled={isSubmitting}>
+                <Plus className="mr-2 h-4 w-4" />
+                {isSubmitting ? "Saving..." : editingId ? "Update" : "Create"}
               </Button>
-            )}
-
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
-              <Plus className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Saving..." : editingId ? "Update" : "Create"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -625,7 +639,7 @@ export function FolderClient() {
                     value={activeDepartmentId}
                     onValueChange={handleActiveDepartmentChange}
                   >
-                    <SelectTrigger className="w-full md:w-[260px]">
+                    <SelectTrigger className="w-full md:w-65">
                       <SelectValue placeholder="Filter by department" />
                     </SelectTrigger>
 
@@ -654,7 +668,9 @@ export function FolderClient() {
                     <TableHead>Department</TableHead>
                     <TableHead>Parent Folder</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead className="w-[120px] text-right">Actions</TableHead>
+                    {canUpdateFolder || canCreateFolder || canDeleteFolder ? (
+                      <TableHead className="w-30 text-right">Actions</TableHead>
+                    ) : null}
                   </TableRow>
                 </TableHeader>
 
@@ -704,13 +720,15 @@ export function FolderClient() {
                             tooltipClassName="bg-slate-900 text-white"
                             arrowClassName="fill-slate-900"
                           >
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              onClick={() => handleEdit(folder)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            {canUpdateFolder && (
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={() => handleEdit(folder)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            )}
                           </ActionTooltip>
 
                           <ActionTooltip
@@ -718,13 +736,15 @@ export function FolderClient() {
                             tooltipClassName="bg-blue-600 text-white"
                             arrowClassName="fill-blue-600"
                           >
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              onClick={() => openMoveDialog(folder)}
-                            >
-                              <FolderInput className="h-4 w-4" />
-                            </Button>
+                            {canMoveFolder && (
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={() => openMoveDialog(folder)}
+                              >
+                                <FolderInput className="h-4 w-4" />
+                              </Button>
+                            )}
                           </ActionTooltip>
 
                           <ActionTooltip
@@ -732,13 +752,15 @@ export function FolderClient() {
                             tooltipClassName="bg-red-600 text-white"
                             arrowClassName="fill-red-600"
                           >
-                            <Button
-                              size="icon"
-                              variant="destructive"
-                              onClick={() => openDeleteDialog(folder.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {canDeleteFolder && (
+                              <Button
+                                size="icon"
+                                variant="destructive"
+                                onClick={() => openDeleteDialog(folder.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </ActionTooltip>
                         </div>
                       </TableCell>
