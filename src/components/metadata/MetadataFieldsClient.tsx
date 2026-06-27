@@ -44,6 +44,8 @@ import {
   MetadataField,
   MetadataFieldType,
 } from "@/features/metadata/metadataField.types";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/constants/permissions";
 
 const FIELD_TYPES: MetadataFieldType[] = ["TEXT", "NUMBER", "DATE", "BOOLEAN", "SELECT"];
 
@@ -86,6 +88,11 @@ export function MetadataFieldsClient() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedField, setSelectedField] = useState<MetadataField | null>(null);
+
+  const { can } = usePermission();
+  const canCreateMetadataField = can(PERMISSIONS.METADATA_FIELD_CREATE_ALL);
+  const canUpdateMetadataField = can(PERMISSIONS.METADATA_FIELD_UPDATE_ALL);
+  const canDeleteMetadataField = can(PERMISSIONS.METADATA_FIELD_DELETE_ALL);
 
   const fetchFields = async () => {
     try {
@@ -209,14 +216,18 @@ export function MetadataFieldsClient() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Metadata Fields</h2>
           <p className="text-muted-foreground">
-            Define custom metadata fields available across all documents.
+            {canCreateMetadataField || canUpdateMetadataField
+              ? "Define custom metadata fields available across all documents."
+              : "All metadata fields are read-only."}
           </p>
         </div>
 
-        <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Field
-        </Button>
+        {canCreateMetadataField && (
+          <Button onClick={openCreateDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Field
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -236,7 +247,9 @@ export function MetadataFieldsClient() {
                   <TableHead>Type</TableHead>
                   <TableHead>Required</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[120px] text-right">Actions</TableHead>
+                  {canUpdateMetadataField || canDeleteMetadataField ? (
+                    <TableHead className="w-30 text-right">Actions</TableHead>
+                  ) : null}
                 </TableRow>
               </TableHeader>
 
@@ -276,9 +289,11 @@ export function MetadataFieldsClient() {
                           tooltipClassName="bg-slate-900 text-white"
                           arrowClassName="fill-slate-900"
                         >
-                          <Button size="icon" variant="outline" onClick={() => openEditDialog(field)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          {canUpdateMetadataField && (
+                            <Button size="icon" variant="outline" onClick={() => openEditDialog(field)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
                         </ActionTooltip>
 
                         <ActionTooltip
@@ -286,9 +301,11 @@ export function MetadataFieldsClient() {
                           tooltipClassName="bg-red-600 text-white"
                           arrowClassName="fill-red-600"
                         >
-                          <Button size="icon" variant="destructive" onClick={() => openDeleteDialog(field)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {canDeleteMetadataField && (
+                            <Button size="icon" variant="destructive" onClick={() => openDeleteDialog(field)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </ActionTooltip>
                       </div>
                     </TableCell>
