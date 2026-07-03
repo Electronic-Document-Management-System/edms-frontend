@@ -49,6 +49,9 @@ import {
 } from "@/features/workflow/workflow.api";
 import { DocumentWorkflowDetail, WorkflowStatus } from "@/features/workflow/workflow.types";
 import { PERMISSIONS } from "@/constants/permissions";
+import { WORKFLOW_ACTIONS } from "@/constants/workflow";
+
+const { APPROVE, ASSIGN, CANCEL, REJECT, SUBMIT } = WORKFLOW_ACTIONS
 
 type DocumentWorkflowCardProps = {
     documentId: number;
@@ -110,11 +113,11 @@ export function DocumentWorkflowCard({ documentId }: DocumentWorkflowCardProps) 
     const isAssignedReviewer =
         workflow && currentUser && workflow.reviewerId === currentUser.id;
 
-    const canSubmit = can("workflow:submit:all") || can("workflow:submit:own") || can("workflow:submit:department");
-    const canAssign = can("workflow:assign:all") || can("workflow:assign:department");
-    const canApprove = can("workflow:approve:all") || can("workflow:approve:department") || (can("workflow:approve:assigned") && isAssignedReviewer);
-    const canReject = can("workflow:reject:all") || can("workflow:reject:department") || (can("workflow:reject:assigned") && isAssignedReviewer);
-    const canCancel = can("workflow:cancel:all") || can("workflow:cancel:department") || (can("workflow:cancel:own") && isSubmitter);
+    const canSubmit = can(PERMISSIONS.WORKFLOW_SUBMIT_ALL) || can(PERMISSIONS.WORKFLOW_SUBMIT_OWN) || can(PERMISSIONS.WORKFLOW_SUBMIT_DEPARTMENT);
+    const canAssign = can(PERMISSIONS.WORKFLOW_ASSIGN_ALL) || can(PERMISSIONS.WORKFLOW_ASSIGN_DEPARTMENT);
+    const canApprove = can(PERMISSIONS.WORKFLOW_APPROVE_ALL) || can(PERMISSIONS.WORKFLOW_APPROVE_DEPARTMENT) || (can(PERMISSIONS.WORKFLOW_APPROVE_ASSIGNED) && isAssignedReviewer);
+    const canReject = can(PERMISSIONS.WORKFLOW_REJECT_ALL) || can(PERMISSIONS.WORKFLOW_REJECT_DEPARTMENT) || (can(PERMISSIONS.WORKFLOW_REJECT_ASSIGNED) && isAssignedReviewer);
+    const canCancel = can(PERMISSIONS.WORKFLOW_CANCEL_ALL) || can(PERMISSIONS.WORKFLOW_CANCEL_DEPARTMENT) || (can(PERMISSIONS.WORKFLOW_CANCEL_OWN) && isSubmitter);
 
     const isTerminal = workflow && ["APPROVED", "REJECTED", "CANCELLED"].includes(workflow.status);
 
@@ -123,6 +126,7 @@ export function DocumentWorkflowCard({ documentId }: DocumentWorkflowCardProps) 
         try {
             if (users.length === 0) {
                 const usersData = await getAllUsers(PERMISSIONS.WORKFLOW_APPROVE_ASSIGNED);
+                // console.log(usersData);
                 setUsers(usersData.filter((u) => u.isActive));
             }
             setSelectedReviewerId(workflow?.reviewerId ? String(workflow.reviewerId) : "");

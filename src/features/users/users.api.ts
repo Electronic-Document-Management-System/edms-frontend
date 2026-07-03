@@ -5,8 +5,9 @@ const BASE = "/users";
 
 export const getAllUsers = async (permission?: string): Promise<User[]> => {
     const query = permission ? `?permission=${permission}` : "";
-    const res = await apiClient<{ data: User[] }>(`${BASE}/${query}`);
-    return res.data;
+    const res = await apiClient<{ data: { users: User[] } }>(`${BASE}/${query}`);
+    // console.log(res.data);
+    return res.data.users;
 };
 
 export const getUserById = async (userId: number): Promise<User> => {
