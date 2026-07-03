@@ -35,6 +35,7 @@ import { DocumentMetadataCard } from "../metadata/DocumentMetadataCard";
 import { DocumentWorkflowCard } from "../workflow/DocumentWorkflowCard";
 import { PERMISSIONS } from "@/constants/permissions";
 import { usePermission } from "@/hooks/usePermission";
+import { DocumentVersionsCard } from "../documentVersion/DocumentVersionsCard";
 
 type DocumentDetailClientProps = {
   documentId: number;
@@ -366,6 +367,7 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
       </div>
       <DocumentMetadataCard documentId={document.id} />
       <DocumentWorkflowCard documentId={document.id} />
+      <DocumentVersionsCard documentId={document.id} />
 
       <Card>
         <CardHeader>
