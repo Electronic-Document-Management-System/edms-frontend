@@ -49,9 +49,6 @@ import {
 } from "@/features/workflow/workflow.api";
 import { DocumentWorkflowDetail, WorkflowStatus } from "@/features/workflow/workflow.types";
 import { PERMISSIONS } from "@/constants/permissions";
-import { WORKFLOW_ACTIONS } from "@/constants/workflow";
-
-const { APPROVE, ASSIGN, CANCEL, REJECT, SUBMIT } = WORKFLOW_ACTIONS
 
 type DocumentWorkflowCardProps = {
     documentId: number;
