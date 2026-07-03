@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/components/auth/AuthGuard";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -17,9 +17,9 @@ export default function DashboardLayout({
 
         <main className="min-h-screen flex-1 bg-slate-50">
           <AppHeader />
-          <AuthGuard>
+          <PermissionGuard permissions={[]}>
             <div className="p-6">{children}</div>
-          </AuthGuard>
+          </PermissionGuard>
         </main>
       </TooltipProvider>
     </SidebarProvider>
