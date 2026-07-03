@@ -3,8 +3,9 @@ import { CreateUserInput, UpdateUserInput, User, UserWithRoles } from "./users.t
 
 const BASE = "/users";
 
-export const getAllUsers = async (): Promise<User[]> => {
-    const res = await apiClient<{ data: User[] }>(`${BASE}/`);
+export const getAllUsers = async (permission?: string): Promise<User[]> => {
+    const query = permission ? `?permission=${permission}` : "";
+    const res = await apiClient<{ data: User[] }>(`${BASE}/${query}`);
     return res.data;
 };
 
@@ -36,14 +37,14 @@ export const activateUser = async (userId: number): Promise<User> => {
     const res = await apiClient<{ data: User }>(`${BASE}/${userId}/activate`, {
         method: "PATCH",
     });
-    return res.data; 
+    return res.data;
 };
 
 export const disableUser = async (userId: number): Promise<User> => {
     const res = await apiClient<{ data: { user: User } }>(`${BASE}/${userId}/disable`, {
         method: "PATCH",
     });
-    return res.data.user; 
+    return res.data.user;
 };
 
 export const getUserRoles = async (userId: number): Promise<UserWithRoles> => {
