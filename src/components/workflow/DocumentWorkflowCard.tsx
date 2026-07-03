@@ -48,6 +48,7 @@ import {
     submitDocumentWorkflow,
 } from "@/features/workflow/workflow.api";
 import { DocumentWorkflowDetail, WorkflowStatus } from "@/features/workflow/workflow.types";
+import { PERMISSIONS } from "@/constants/permissions";
 
 type DocumentWorkflowCardProps = {
     documentId: number;
@@ -121,7 +122,7 @@ export function DocumentWorkflowCard({ documentId }: DocumentWorkflowCardProps) 
     const openAssignDialog = async () => {
         try {
             if (users.length === 0) {
-                const usersData = await getAllUsers();
+                const usersData = await getAllUsers(PERMISSIONS.WORKFLOW_APPROVE_ASSIGNED);
                 setUsers(usersData.filter((u) => u.isActive));
             }
             setSelectedReviewerId(workflow?.reviewerId ? String(workflow.reviewerId) : "");
