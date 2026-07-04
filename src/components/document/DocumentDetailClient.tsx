@@ -36,6 +36,7 @@ import { DocumentWorkflowCard } from "../workflow/DocumentWorkflowCard";
 import { PERMISSIONS } from "@/constants/permissions";
 import { usePermission } from "@/hooks/usePermission";
 import { DocumentVersionsCard } from "../documentVersion/DocumentVersionsCard";
+import { DocumentPreviewCard } from "./DocumentPreviewCard";
 
 type DocumentDetailClientProps = {
   documentId: number;
@@ -369,30 +370,7 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
       <DocumentWorkflowCard documentId={document.id} />
       <DocumentVersionsCard documentId={document.id} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Preview</CardTitle>
-        </CardHeader>
-
-        <CardContent>
-          <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-dashed bg-slate-50 p-8 text-center">
-            <FileText className="mb-3 h-10 w-10 text-muted-foreground" />
-
-            <p className="font-medium">Document preview</p>
-            <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              Preview engine will be connected later. For now, use the download
-              action to open the uploaded file.
-            </p>
-
-            {canDownload && (
-              <Button className="mt-4" variant="outline" onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
-                Download File
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <DocumentPreviewCard documentId={document.id} mimeType={document.mimeType} />
 
       <ConfirmActionDialog
         open={archiveDialogOpen}

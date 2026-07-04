@@ -124,3 +124,12 @@ export async function deleteDocument(documentId: number) {
 export function getDocumentDownloadUrl(documentId: number) {
   return `/api/backend/document/${documentId}/download`;
 };
+
+export const getDocumentPreviewUrl = async (
+  documentId: number
+): Promise<{ previewUrl: string; mimeType: string }> => {
+  const res = await apiClient<{ data: { previewUrl: string; mimeType: string } }>(
+    `/document/${documentId}/preview-url`
+  );
+  return res.data;
+};
