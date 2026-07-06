@@ -8,6 +8,7 @@ import {
     History,
     Send,
     UserPlus,
+    Workflow,
     XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -211,8 +212,10 @@ export function DocumentWorkflowCard({ documentId }: DocumentWorkflowCardProps) 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Workflow</CardTitle>
-
+                <CardTitle className="flex items-center gap-2">
+                    <Workflow />
+                    Workflow
+                </CardTitle>
                 {workflow && (
                     <Badge variant={statusConfig[workflow.status].variant}>
                         {statusConfig[workflow.status].label}
