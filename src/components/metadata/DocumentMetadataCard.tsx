@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit, Plus, Tag, Trash2 } from "lucide-react";
+import { Edit, Plus, Tag, TagIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ActionTooltip } from "@/components/common/ActionTooltip";
@@ -251,7 +251,10 @@ export function DocumentMetadataCard({ documentId }: DocumentMetadataCardProps) 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Metadata</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                    <TagIcon className="h-5 w-5" />
+                    Metadata
+                </CardTitle>
 
                 <ActionTooltip
                     label="Add metadata"
