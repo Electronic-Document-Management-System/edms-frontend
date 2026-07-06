@@ -4,7 +4,7 @@ import { CreateUserInput, UpdateUserInput, User, UserWithRoles } from "./users.t
 const BASE = "/users";
 
 export const getAllUsers = async (permission?: string): Promise<User[]> => {
-    const query = permission ? `?permission=${permission}` : "";
+    const query = permission ? `?permission=${encodeURIComponent(permission)}` : "";
     const res = await apiClient<{ data: { users: User[] } }>(`${BASE}/${query}`);
     // console.log(res.data);
     return res.data.users;
