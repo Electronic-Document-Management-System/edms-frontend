@@ -37,6 +37,7 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { usePermission } from "@/hooks/usePermission";
 import { DocumentVersionsCard } from "../documentVersion/DocumentVersionsCard";
 import { DocumentPreviewCard } from "./DocumentPreviewCard";
+import { DocumentShareCard } from "./DocumentShareCard";
 
 type DocumentDetailClientProps = {
   documentId: number;
@@ -315,7 +316,9 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
       <div className="grid gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>File Information</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" /> File Information
+            </CardTitle>
           </CardHeader>
 
           <CardContent>
@@ -369,7 +372,7 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
       <DocumentMetadataCard documentId={document.id} />
       <DocumentWorkflowCard documentId={document.id} />
       <DocumentVersionsCard documentId={document.id} />
-
+      <DocumentShareCard documentId={document.id} />
       <DocumentPreviewCard documentId={document.id} mimeType={document.mimeType} />
 
       <ConfirmActionDialog
