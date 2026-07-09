@@ -21,7 +21,6 @@ export function AppHeader() {
 
         if (result.success) {
             setLogoutDialogOpen(false);
-            router.replace("/login");
         }
     };
 

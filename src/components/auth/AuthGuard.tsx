@@ -15,7 +15,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, user]);
 
   if (!isAuthenticated || !user) {
-    return null;
+    return (
+      <div className="flex h-full items-center justify-center py-20">
+        <span className="text-sm text-muted-foreground">Redirecting...</span>
+      </div>
+    );
   }
 
   return children;
