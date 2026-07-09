@@ -8,6 +8,7 @@ import useAuthStore from "@/store/authStore";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ConfirmActionDialog } from "@/components/common/ConfirmActionDialog";
+import { ThemeToggle } from "../ThemeProvider/ThemeToggle";
 
 export function AppHeader() {
     const router = useRouter();
@@ -26,7 +27,7 @@ export function AppHeader() {
 
     return (
         <>
-            <header className="flex h-16 items-center justify-between border-b bg-white px-6">
+            <header className="flex h-16 items-center justify-between border-b bg-background px-6">
                 <div className="flex items-center gap-4">
                     <SidebarTrigger />
 
@@ -40,14 +41,17 @@ export function AppHeader() {
                     </div>
                 </div>
 
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLogoutDialogOpen(true)}
-                >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                </Button>
+                <div className="flex items-center gap-4">
+                    <ThemeToggle />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLogoutDialogOpen(true)}
+                    >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                    </Button>
+                </div>
             </header>
 
             <ConfirmActionDialog

@@ -15,7 +15,7 @@ export default function DashboardLayout({
 
         <AppSidebar />
 
-        <main className="min-h-screen flex-1 bg-slate-50">
+        <main className="min-h-screen flex-1 background">
           <AppHeader />
           <AuthGuard>
             <div className="p-6">{children}</div>

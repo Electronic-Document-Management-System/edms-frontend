@@ -250,7 +250,7 @@ export function UploadDocumentClient() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Selected location</label>
 
-              <div className="flex h-10 items-center rounded-md border bg-slate-50 px-3 text-sm text-muted-foreground">
+              <div className="flex h-10 items-center rounded-md border background px-3 text-sm text-muted-foreground">
                 {selectedDepartment && selectedFolder ? (
                   <span>
                     {selectedDepartment.name} / 📁 {selectedFolder.name}
@@ -280,9 +280,9 @@ export function UploadDocumentClient() {
           <CardTitle>File Upload</CardTitle>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 ">
           {!file ? (
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-slate-50 px-6 py-10 text-center transition hover:bg-slate-100">
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-background px-6 py-10 text-center transition hover:bg-foreground">
               <FileUp className="mb-3 h-10 w-10 text-muted-foreground" />
 
               <p className="text-sm font-medium">Click to select a file</p>

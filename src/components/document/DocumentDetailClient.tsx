@@ -307,7 +307,7 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
               )}
             </div>
 
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium">
+            <span className="rounded-full bg-background px-3 py-1 text-xs font-medium">
               {document.status}
             </span>
           </div>

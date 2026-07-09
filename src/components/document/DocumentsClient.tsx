@@ -467,7 +467,7 @@ export function DocumentsClient() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          <div className="rounded-lg border bg-slate-50 px-4 py-3">
+          <div className="rounded-lg border bg-background px-4 py-3">
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
@@ -616,7 +616,7 @@ export function DocumentsClient() {
                     </TableCell>
 
                     <TableCell>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium">
+                      <span className="rounded-full bg-background px-3 py-1 text-xs font-medium">
                         {document.status}
                       </span>
                     </TableCell>
