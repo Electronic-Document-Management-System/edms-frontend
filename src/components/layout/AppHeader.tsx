@@ -9,6 +9,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ConfirmActionDialog } from "@/components/common/ConfirmActionDialog";
 import { ThemeToggle } from "../ThemeProvider/ThemeToggle";
+import { NotificationBell } from "../notification/NotificationBell";
 
 export function AppHeader() {
     const router = useRouter();
@@ -42,6 +43,7 @@ export function AppHeader() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <NotificationBell />
                     <ThemeToggle />
                     <Button
                         variant="outline"
