@@ -38,6 +38,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { DocumentVersionsCard } from "../documentVersion/DocumentVersionsCard";
 import { DocumentPreviewCard } from "./DocumentPreviewCard";
 import { DocumentShareCard } from "./DocumentShareCard";
+import { DocumentCommentsCard } from "../comment/DocumentCommentsCard";
 
 type DocumentDetailClientProps = {
   documentId: number;
@@ -373,6 +374,7 @@ export function DocumentDetailClient({ documentId }: DocumentDetailClientProps) 
       <DocumentWorkflowCard documentId={document.id} />
       <DocumentVersionsCard documentId={document.id} />
       <DocumentShareCard documentId={document.id} />
+      <DocumentCommentsCard documentId={document.id} />
       <DocumentPreviewCard documentId={document.id} mimeType={document.mimeType} />
 
       <ConfirmActionDialog
