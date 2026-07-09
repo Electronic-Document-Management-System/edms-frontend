@@ -577,7 +577,7 @@ export function FolderClient() {
             <div className="space-y-6">
               <div className="space-y-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="rounded-lg border bg-slate-50 px-4 py-3">
+                  <div className="rounded-lg border bg-background px-4 py-3">
                     <Breadcrumb>
                       <BreadcrumbList>
                         <BreadcrumbItem>
