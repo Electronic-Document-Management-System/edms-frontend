@@ -34,6 +34,14 @@ export const PERMISSIONS = {
     DOCUMENT_SHARE_OWN: "document:share:own",
     DOCUMENT_SHARE_ALL: "document:share:all",
 
+    // Comments
+    COMMENT_CREATE_OWN: "comment:create:own",
+    COMMENT_CREATE_ALL: "comment:create:all",
+    COMMENT_READ_OWN: "comment:read:own",
+    COMMENT_READ_ALL: "comment:read:all",
+    COMMENT_UPDATE_OWN: "comment:update:own",
+    COMMENT_DELETE_OWN: "comment:delete:own",
+
     // Departments
     DEPARTMENT_READ_ALL: "department:read:all",
     DEPARTMENT_CREATE_ALL: "department:create:all",
