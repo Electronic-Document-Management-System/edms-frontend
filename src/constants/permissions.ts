@@ -109,7 +109,11 @@ export const PERMISSIONS = {
 
     // Audit / Reports / Notifications
     AUDIT_LOG_READ_ALL: "auditLog:read:all",
+    
+    REPORT_READ_ALL: "report:read:all",
     REPORT_GENERATE_ALL: "report:generate:all",
+    REPORT_DOWNLOAD_ALL: "report:download:all",
+
     NOTIFICATION_READ_OWN: "notification:read:own",
 
     // User Management

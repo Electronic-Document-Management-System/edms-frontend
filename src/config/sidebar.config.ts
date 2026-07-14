@@ -1,5 +1,6 @@
 import {
   Archive, Building2, CheckSquare, ClipboardList,
+  FileBarChart,
   FileText, FolderOpen, GanttChart, KeyRound,
   LayoutDashboard, Lock, ScrollText, Settings,
   Shield, TextCursorInput, Upload, Users,
@@ -84,6 +85,16 @@ export const navItems: NavItem[] = [
         ],
       },
     ],
+  },
+  {
+    title: "Reports",
+    url: "/reports",
+    icon: FileBarChart,
+    permissions: [
+      PERMISSIONS.REPORT_READ_ALL,
+      PERMISSIONS.REPORT_GENERATE_ALL,
+      PERMISSIONS.REPORT_DOWNLOAD_ALL,
+    ]
   },
   {
     title: "Organization",
