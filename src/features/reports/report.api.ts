@@ -41,7 +41,7 @@ export const getAuditReport = async (filters?: ReportFilters): Promise<AuditRepo
   return res.data;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = '/api/backend';
 
 export const downloadReportExport = async (
   reportType: "documents" | "departments" | "workflows" | "audit",
